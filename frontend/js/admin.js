@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/fi
 
 const API = window.SIMPLE_FINANCE_API || (window.location.port === "5500" ? "http://127.0.0.1:8000" : "");
 const money = (value) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value || 0);
+let adminLoadingTimer = setTimeout(() => document.getElementById("adminLoader")?.classList.add("visible"), 5000);
 
 async function loadDashboard(user) {
   const token = await user.getIdToken();
@@ -21,11 +22,12 @@ async function loadDashboard(user) {
   const entries = Object.entries(data.logins_by_day);
   const max = Math.max(...entries.map(([, value]) => value), 1);
   document.getElementById("loginChart").innerHTML = entries.length ? entries.slice(-30).map(([day, value]) => `<div class="admin-bar-row"><span>${day}</span><div><i style="width:${Math.max(4, value / max * 100)}%"></i></div><strong>${value}</strong></div>`).join("") : "<p class=\"admin-status\">No login data yet.</p>";
+  clearTimeout(adminLoadingTimer);
   document.getElementById("adminLoader").classList.remove("visible");
 }
 
 document.getElementById("logoutButton").onclick = logout;
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "login.html"; return; }
-  try { await loadDashboard(user); } catch (error) { document.getElementById("adminLoader").classList.remove("visible"); document.getElementById("adminStatus").textContent = error.message; document.getElementById("adminStatus").classList.add("voice-error"); }
+  try { await loadDashboard(user); } catch (error) { clearTimeout(adminLoadingTimer); document.getElementById("adminLoader").classList.remove("visible"); document.getElementById("adminStatus").textContent = error.message; document.getElementById("adminStatus").classList.add("voice-error"); }
 });

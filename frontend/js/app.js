@@ -14,7 +14,8 @@ const dateLabel = (date) => date ? new Date(`${date}T00:00:00`).toLocaleDateStri
 const showModal = (id) => document.getElementById(id).classList.add("visible");
 const hideModal = (id) => document.getElementById(id).classList.remove("visible");
 const escapeHtml = (value = "") => { const div = document.createElement("div"); div.textContent = value; return div.innerHTML; };
-const setLoading = (visible, text = "Loading your finances...") => { const loader = document.getElementById("appLoader"); if (loader) { document.getElementById("appLoaderText").textContent = text; loader.classList.toggle("visible", visible); } };
+let loadingTimer = null;
+const setLoading = (visible, text = "Loading your finances...") => { const loader = document.getElementById("appLoader"); if (!loader) return; clearTimeout(loadingTimer); if (!visible) { loader.classList.remove("visible"); return; } document.getElementById("appLoaderText").textContent = text; loadingTimer = setTimeout(() => loader.classList.add("visible"), 5000); };
 
 protectPage(async (user) => {
   const firstName = user.displayName?.split(" ")[0] || "there";

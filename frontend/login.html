@@ -21,8 +21,9 @@
     document.getElementById("loginButton").addEventListener("click", async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
-      document.getElementById("loginLoader").classList.add("visible");
-      try { await login(); } catch (error) { document.getElementById("loginLoader").classList.remove("visible"); alert(error.message); button.disabled = false; }
+      const loader = document.getElementById("loginLoader");
+      const loadingTimer = setTimeout(() => loader.classList.add("visible"), 5000);
+      try { await login(); } catch (error) { clearTimeout(loadingTimer); loader.classList.remove("visible"); alert(error.message); button.disabled = false; }
     });
   </script>
 </body>
