@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Finance | Sign in</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="login-page">
+  <main class="login-container">
+    <div class="brand-icon">₹</div>
+    <p class="eyebrow">PERSONAL FINANCE</p>
+    <h1>Simple Finance</h1>
+    <p class="login-description">A calmer way to understand where your money goes.</p>
+    <button class="google-button" id="loginButton"><span class="google-g">G</span> Continue with Google</button>
+    <p class="login-note">Your data is stored in your private Firebase account.</p>
+  </main>
+  <script type="module">
+    import { login } from "./js/auth.js";
+    document.getElementById("loginButton").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try { await login(); } catch (error) { alert(error.message); button.disabled = false; }
+    });
+  </script>
+</body>
+</html>

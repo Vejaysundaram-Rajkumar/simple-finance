@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Finance</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div><p class="eyebrow">YOUR MONEY, CLEARLY</p><h1 id="greeting">Good day</h1></div>
+      <button class="avatar-button" id="profileButton"><img id="userAvatar" alt="Profile"></button>
+    </header>
+    <section class="page active" id="homePage">
+      <div class="budget-card"><div class="budget-top"><div><span>AVAILABLE THIS MONTH</span><h2 id="remaining">₹0</h2></div><button class="small-button" id="editBudget">Set budget</button></div><div class="progress-track"><div class="progress-value" id="budgetProgress"></div></div><div class="budget-details"><span>Spent <strong id="monthSpent">₹0</strong></span><span>Budget <strong id="monthBudget">₹0</strong></span></div></div>
+      <div class="entry-card"><div class="entry-heading"><div class="ai-badge">✦</div><div><h3>What did you spend?</h3><p>Write it naturally. We will organize it.</p></div></div><textarea id="expenseInput" placeholder="300 petrol, 200 lunch and 500 for a shirt"></textarea><div class="entry-actions"><button class="primary-button" id="parseButton">Add expenses</button><button class="voice-button" id="voiceButton" title="Start voice input" aria-label="Start voice input">🎙 Speak</button></div><div class="import-actions"><button class="secondary-button" id="importButton">Import CSV / Excel</button><input type="file" id="importFile" accept=".csv,.xlsx,.xls" hidden></div><p class="voice-status" id="voiceStatus" aria-live="polite">Tap Speak, then say what you spent.</p></div>
+      <div class="section-heading"><div><span>TODAY</span><h2>Recent expenses</h2></div><span id="todayCount">0 expenses</span></div><div class="transaction-list" id="todayExpenses"></div>
+    </section>
+    <section class="page" id="analysisPage"><div class="page-title analysis-title"><div><span>MONTHLY VIEW</span><h2>Analysis</h2></div><button class="primary-button report-button" id="openReport">Generate report</button></div><div class="analysis-month-picker"><label for="analysisMonth">VIEW MONTH</label><input type="month" id="analysisMonth"></div><div class="metric-grid"><div class="metric-card"><span>Spent this month</span><strong id="analysisSpent">₹0</strong></div><div class="metric-card"><span>Remaining</span><strong id="analysisRemaining">₹0</strong></div></div><div class="chart-card"><h3>By category</h3><div id="categoryBreakdown" class="category-list"></div></div></section>
+    <section class="page" id="trackPage"><div class="page-title"><span>ALL ACTIVITY</span><h2>Track expenses</h2></div><div class="track-toolbar"><button class="month-button" id="previousMonth" title="Previous month">‹</button><div><span>VIEWING</span><strong id="trackMonth"></strong></div><button class="month-button" id="nextMonth" title="Next month">›</button></div><div class="transaction-list" id="expenseHistory"></div></section>
+  </main>
+  <nav class="bottom-nav"><button class="nav-item active" data-page="homePage"><span>⌂</span>Home</button><button class="nav-item" data-page="analysisPage"><span>◔</span>Analysis</button><button class="nav-item" data-page="trackPage"><span>≡</span>Track</button></nav>
+  <div class="profile-menu" id="profileMenu"><div class="profile-info"><img id="menuAvatar" alt="Profile"><div><strong id="profileName">User</strong><span id="profileEmail"></span></div></div><button id="logoutButton">Sign out</button></div>
+  <div class="modal" id="reviewModal"><div class="modal-sheet"><div class="modal-header"><div><span>CHECK BEFORE SAVING</span><h2>Review expenses</h2></div><button class="close-button" id="closeReview">×</button></div><p class="review-description">Make any corrections before these entries are added to your account.</p><div id="reviewList"></div><button class="primary-button full-button" id="confirmExpenses">Save expenses</button></div></div>
+  <div class="modal" id="editExpenseModal"><div class="modal-sheet"><div class="modal-header"><div><span>UPDATE SAVED EXPENSE</span><h2>Edit expense</h2></div><button class="close-button" id="closeEditExpense">×</button></div><div class="edit-form"><label>Amount<input type="number" id="editAmount" min="0.01" step="0.01"></label><label>Category<select id="editCategory"><option>Food</option><option>Shopping</option><option>Personal Care</option><option>Transport</option><option>Other</option></select></label><label>Subcategory<input id="editSubcategory" maxlength="80"></label><label>Date<input type="date" id="editDate"></label></div><button class="primary-button full-button" id="saveEditedExpense">Update expense</button></div></div>
+  <div class="modal" id="budgetModal"><div class="modal-sheet"><div class="modal-header"><div><span>MONTHLY LIMIT</span><h2>Set your budget</h2></div><button class="close-button" id="closeBudget">×</button></div><div class="money-input"><span>₹</span><input type="number" id="budgetInput" min="1" placeholder="20000"></div><button class="primary-button full-button" id="saveBudget">Save budget</button></div></div>
+  <div class="modal" id="reportModal"><div class="modal-sheet"><div class="modal-header"><div><span>AI FINANCIAL REPORT</span><h2>Choose a period</h2></div><button class="close-button" id="closeReport">×</button></div><div class="report-form"><label>Period<select id="reportPeriod"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="custom">Custom range</option></select></label><label id="reportMonthField">Month<input type="month" id="reportMonth"></label><label id="reportYearField">Year<input type="number" id="reportYear" min="2000" max="2100"></label><div class="report-range" id="reportRangeFields"><label>From<input type="date" id="reportStart"></label><label>To<input type="date" id="reportEnd"></label></div></div><button class="primary-button full-button" id="generateReport">Create PDF report</button></div></div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
