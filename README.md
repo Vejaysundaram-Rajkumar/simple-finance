@@ -53,6 +53,7 @@ Use the current directory, accept the detected settings, and deploy. Add these E
 GEMINI_API_KEY=your Gemini API key
 FIREBASE_SERVICE_ACCOUNT_JSON=the complete service-account JSON on one line
 FRONTEND_URL=https://your-project.vercel.app
+ADMIN_EMAILS=your-google-email@example.com
 ```
 
 Do not upload `backend/.env` or `backend/serviceAccountKey.json`. The service-account JSON belongs only in Vercel Environment Variables.
@@ -70,3 +71,5 @@ https://your-project.vercel.app/login.html
 ```
 
 Add the Vercel hostname to Firebase Authentication authorized domains. The API is available at the same origin under `/api`, so no separate backend URL is needed.
+
+The owner-only usage dashboard is available at `/admin.html`. It reports aggregate user counts, active users, login totals, expense totals, and login activity by day. Access is controlled by the server-side `ADMIN_EMAILS` allowlist; no user expense details are exposed.

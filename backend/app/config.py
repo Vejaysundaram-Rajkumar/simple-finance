@@ -13,3 +13,8 @@ FIREBASE_CREDENTIALS = os.getenv(
     str(BACKEND_DIR / "serviceAccountKey.json"),
 )
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://127.0.0.1:5500")
+ADMIN_EMAILS = {
+    email.strip().lower()
+    for email in os.getenv("ADMIN_EMAILS", "").split(",")
+    if email.strip()
+}
