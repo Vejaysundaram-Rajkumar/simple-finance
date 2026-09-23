@@ -1,0 +1,7 @@
+backend/.env
+backend/serviceAccountKey.json
+backend/venv/
+__pycache__/
+*.pyc
+.DS_Store
+.vercel
