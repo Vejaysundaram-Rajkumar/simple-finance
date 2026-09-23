@@ -30,9 +30,9 @@ async def overview(_: dict = Depends(require_admin)):
     amount_total = 0.0
 
     for user_doc in users:
-        user = user_doc.to_dict()
+        user = user_doc.to_dict() or {}
         last_login = user.get("last_login")
-        if hasattr(last_login, "replace"):
+        if isinstance(last_login, datetime):
             last_login = last_login.replace(tzinfo=timezone.utc) if last_login.tzinfo is None else last_login
             if last_login >= seven_days_ago:
                 active_7d += 1
