@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="./css/style.css">
 </head>
 <body class="login-page">
+  <div class="app-loader" id="loginLoader" role="status" aria-live="polite"><span class="loader-ring"></span><span>Connecting to Google...</span></div>
   <main class="login-container">
     <div class="brand-icon">₹</div>
     <p class="eyebrow">PERSONAL FINANCE</p>
@@ -20,7 +21,8 @@
     document.getElementById("loginButton").addEventListener("click", async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
-      try { await login(); } catch (error) { alert(error.message); button.disabled = false; }
+      document.getElementById("loginLoader").classList.add("visible");
+      try { await login(); } catch (error) { document.getElementById("loginLoader").classList.remove("visible"); alert(error.message); button.disabled = false; }
     });
   </script>
 </body>

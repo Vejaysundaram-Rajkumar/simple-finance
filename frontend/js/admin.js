@@ -17,16 +17,15 @@ async function loadDashboard(user) {
     ["Active users, 7 days", data.active_users_7d],
     ["Active users, 30 days", data.active_users_30d],
     ["Total logins", data.total_logins],
-    ["Expenses recorded", data.total_expenses],
-    ["Expense value", money(data.total_expense_amount)],
   ].map(([label, value]) => `<div class="metric-card"><span>${label}</span><strong>${value}</strong></div>`).join("");
   const entries = Object.entries(data.logins_by_day);
   const max = Math.max(...entries.map(([, value]) => value), 1);
   document.getElementById("loginChart").innerHTML = entries.length ? entries.slice(-30).map(([day, value]) => `<div class="admin-bar-row"><span>${day}</span><div><i style="width:${Math.max(4, value / max * 100)}%"></i></div><strong>${value}</strong></div>`).join("") : "<p class=\"admin-status\">No login data yet.</p>";
+  document.getElementById("adminLoader").classList.remove("visible");
 }
 
 document.getElementById("logoutButton").onclick = logout;
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = "login.html"; return; }
-  try { await loadDashboard(user); } catch (error) { document.getElementById("adminStatus").textContent = error.message; document.getElementById("adminStatus").classList.add("voice-error"); }
+  try { await loadDashboard(user); } catch (error) { document.getElementById("adminLoader").classList.remove("visible"); document.getElementById("adminStatus").textContent = error.message; document.getElementById("adminStatus").classList.add("voice-error"); }
 });

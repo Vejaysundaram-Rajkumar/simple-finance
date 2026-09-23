@@ -26,8 +26,6 @@ async def overview(_: dict = Depends(require_admin)):
     active_30d = 0
     login_total = 0
     login_days = Counter()
-    expense_total = 0
-    amount_total = 0.0
 
     for user_doc in users:
         user = user_doc.to_dict() or {}
@@ -41,18 +39,11 @@ async def overview(_: dict = Depends(require_admin)):
             login_days[last_login.date().isoformat()] += 1
         login_total += int(user.get("login_count", 0) or 0)
 
-        for expense_doc in user_doc.reference.collection("expenses").stream():
-            expense = expense_doc.to_dict()
-            expense_total += 1
-            amount_total += float(expense.get("amount", 0) or 0)
-
     return {
         "generated_at": now.isoformat(),
         "total_users": len(users),
         "active_users_7d": active_7d,
         "active_users_30d": active_30d,
         "total_logins": login_total,
-        "total_expenses": expense_total,
-        "total_expense_amount": amount_total,
         "logins_by_day": dict(sorted(login_days.items())),
     }
