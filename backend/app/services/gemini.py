@@ -32,9 +32,36 @@ GEMINI_RESPONSE_SCHEMA = {
                         ],
                     },
                     "subcategory": {"type": "STRING"},
+                    "payment_type": {"type": "STRING", "enum": ["debit", "credit"]},
                     "expense_date": {"type": "STRING", "nullable": True},
+                    "is_shared": {"type": "BOOLEAN"},
+                    "group_name": {"type": "STRING", "nullable": True},
+                    "shared_as_group": {"type": "BOOLEAN"},
+                    "shared_participant_count": {"type": "INTEGER", "nullable": True},
+                    "shared_with": {
+                        "type": "ARRAY",
+                        "items": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "name": {"type": "STRING"},
+                                "amount": {"type": "NUMBER"},
+                            },
+                            "required": ["name", "amount"],
+                        },
+                    },
                 },
-                "required": ["amount", "category", "subcategory", "expense_date"],
+                "required": [
+                    "amount",
+                    "category",
+                    "subcategory",
+                    "payment_type",
+                    "expense_date",
+                    "is_shared",
+                    "group_name",
+                    "shared_as_group",
+                    "shared_participant_count",
+                    "shared_with",
+                ],
             },
         }
     },
@@ -96,10 +123,28 @@ Split multiple expenses into separate records. Never invent an expense.
 Use exactly one of these categories: Food, Shopping, Personal Care, Transport, Other.
 Prefer the supplied subcategories, otherwise create a short useful subcategory.
 Assume an Indian financial context and preserve the exact amounts mentioned.
+Set payment_type="credit" only when the user explicitly says the expense was paid
+with a credit card or on credit; otherwise set payment_type="debit" (including UPI
+and debit cards). Do not treat money owed by another person as a credit-card payment.
 Today is {__import__('datetime').date.today().isoformat()}.
 Resolve relative dates such as today, yesterday, day before yesterday, last Monday,
 and explicit dates into YYYY-MM-DD. If no date is stated, use null.
 Return expense_date for every record, using null only when the input has no date.
+Detect expenses the user paid for other people. For these, set is_shared=true and list
+each other person's name and exact share amount in shared_with; do not include the user.
+The user's share is the total amount minus the listed shares. If the user explicitly says
+the bill is split equally among them and named others, calculate each other person's share
+to the nearest minor currency unit. If the user explicitly gives a total participant count
+including themselves but no individual names, set shared_as_group=true and shared_with to
+one entry named exactly group_name (or "Group" if not named). Its amount is the total owed
+by all other participants: amount * (participant_count - 1) / participant_count, rounded
+to two decimal places. Set shared_participant_count to that count. The user will supply or
+edit the group name before saving. For named individuals set shared_as_group=false and
+shared_participant_count=null. Set group_name when a group is named, otherwise null.
+For personal expenses return is_shared=false, group_name=null, shared_as_group=false,
+shared_participant_count=null, and shared_with=[].
+Never invent people or shares. If a shared expense is mentioned but shares are unclear,
+set is_shared=true and shared_with=[] so the user can complete it before saving.
 
 DEFAULT SUBCATEGORIES: {BASE_SUBCATEGORIES}
 USER LEARNED SUBCATEGORIES: {learned_subcategories}

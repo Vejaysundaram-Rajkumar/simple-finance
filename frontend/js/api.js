@@ -28,6 +28,10 @@ export const saveExpenses = (expenses) => request("/api/expenses", {
 });
 export const getToday = () => request("/api/expenses/today");
 export const getExpenses = () => request("/api/expenses");
+export const getSharedBalances = () => request("/api/expenses/balances");
+export const createSettlement = (data) => request("/api/expenses/settlements", {
+  method: "POST", body: JSON.stringify(data),
+});
 export const deleteExpense = (id) => request(`/api/expenses/${id}`, { method: "DELETE" });
 export const updateExpense = (id, data) => request(`/api/expenses/${id}`, {
   method: "PUT", body: JSON.stringify(data),

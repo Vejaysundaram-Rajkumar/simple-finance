@@ -2,10 +2,12 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from google.cloud.firestore_v1.base_query import FieldFilter
+from pydantic import ValidationError
 
 from app.auth import get_current_user
 from app.firebase import db
-from app.models.schemas import ExpenseUpdate, MultipleExpenseCreate
+from app.models.schemas import ExpenseCreate, ExpenseUpdate, MultipleExpenseCreate, SettlementCreate
+from app.services.shared_expenses import _person_key, get_shared_balances
 
 router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
 
@@ -61,12 +63,54 @@ async def get_today_expenses(user=Depends(get_current_user)):
     return {"total": sum(item["amount"] for item in expenses), "count": len(expenses), "expenses": expenses}
 
 
+@router.get("/balances")
+async def get_balances(user=Depends(get_current_user)):
+    return get_shared_balances(user["uid"])
+
+
+@router.post("/settlements")
+async def create_settlement(request: SettlementCreate, user=Depends(get_current_user)):
+    uid = user["uid"]
+    balances = get_shared_balances(uid)
+    person = next(
+        (person for person in balances["people"] if _person_key(person["name"]) == _person_key(request.person_name)),
+        None,
+    )
+    if not person:
+        raise HTTPException(status_code=404, detail="No shared expenses found for this person")
+    amount = round(request.amount, 2)
+    if amount > person["outstanding"]:
+        raise HTTPException(status_code=422, detail="Payment cannot exceed the outstanding balance")
+
+    now = datetime.now(timezone.utc)
+    settlement_date = request.settlement_date or now.date().isoformat()
+    ref = db.collection("users").document(uid).collection("settlements").document()
+    ref.set(
+        {
+            "person_name": person["name"],
+            "person_key": _person_key(person["name"]),
+            "amount": amount,
+            "settlement_date": settlement_date,
+            "created_at": now,
+        }
+    )
+    return {"message": "Payment recorded", **get_shared_balances(uid)}
+
+
 @router.put("/{expense_id}")
 async def update_expense(expense_id: str, request: ExpenseUpdate, user=Depends(get_current_user)):
     ref = expense_collection(user["uid"]).document(expense_id)
-    if not ref.get().exists:
+    snapshot = ref.get()
+    if not snapshot.exists:
         raise HTTPException(status_code=404, detail="Expense not found")
-    updates = request.model_dump(exclude_none=True)
+    updates = request.model_dump(exclude_unset=True)
+    existing = snapshot.to_dict()
+    try:
+        validated = ExpenseCreate.model_validate({**existing, **updates})
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors(include_context=False)) from exc
+    if "shared_with" in updates:
+        updates["shared_with"] = [share.model_dump() for share in validated.shared_with]
     updates["updated_at"] = datetime.now(timezone.utc)
     ref.update(updates)
     return {"message": "Expense updated"}

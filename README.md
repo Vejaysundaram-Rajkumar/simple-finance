@@ -73,3 +73,9 @@ https://your-project.vercel.app/login.html
 Add the Vercel hostname to Firebase Authentication authorized domains. The API is available at the same origin under `/api`, so no separate backend URL is needed.
 
 The owner-only usage dashboard is available at `/admin.html`. It reports aggregate user counts, active users, login totals, expense totals, and login activity by day. Access is controlled by the server-side `ADMIN_EMAILS` allowlist; no user expense details are exposed.
+
+## Expense tracking
+
+Expenses can be marked as debit (UPI or debit card) or credit card. For an equal group split with a participant count but no individual names, the app calculates the combined amount owed by the other participants and tracks it under the group name you enter. Named shares remain available when you want individual balances. Record repayments against the group or person to reduce the corresponding outstanding amount. Monthly analysis distinguishes total credit-card charges from your personal share; it does not calculate the card issuer's outstanding bill. PDF reports include a transaction table with each saved original entry, payment type, and amount.
+
+These fields are additive in each user's existing Firestore `expenses` collection. No migration is required: historical expenses without a `payment_type` are treated as debit, and report descriptions fall back to the transaction subcategory when an older record has no saved original entry. New natural-language entries continue to store their original text as `raw_input`.

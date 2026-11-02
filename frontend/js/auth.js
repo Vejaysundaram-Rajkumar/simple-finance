@@ -6,12 +6,16 @@ const API = window.SIMPLE_FINANCE_API || (window.location.port === "5500" ? "htt
 export async function login() {
   await authPersistence;
   const result = await signInWithPopup(auth, googleProvider);
-  const token = await result.user.getIdToken();
+  const token = await result.user.getIdToken(true);
   const response = await fetch(`${API}/api/users/sync`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!response.ok) throw new Error("Unable to sync your account.");
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const detail = typeof body.detail === "string" ? `: ${body.detail}` : "";
+    throw new Error(`Account sync failed (${response.status})${detail}`);
+  }
   window.location.href = "index.html";
 }
 
