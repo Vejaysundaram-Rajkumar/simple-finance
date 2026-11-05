@@ -27,7 +27,7 @@
         <div class="metric-card"><span>Personal spending</span><strong id="analysisSpent">₹0</strong></div>
         <div class="metric-card"><span>Budget remaining</span><strong id="analysisRemaining">₹0</strong></div>
         <div class="metric-card"><span>Paid upfront</span><strong id="analysisCashPaid">₹0</strong></div>
-        <div class="metric-card"><span>Still owed this month</span><strong id="analysisOutstanding">₹0</strong></div>
+        <div class="metric-card"><span>Still owed this month</span><strong id="analysisOutstanding">₹0</strong><small class="metric-detail">Total due: <strong id="analysisTotalOwed">₹0</strong></small></div>
         <div class="metric-card"><span>Debit / UPI total</span><strong id="analysisDebitPaid">₹0</strong><small class="metric-detail">Your personal share: <strong id="analysisDirectDebit">₹0</strong></small></div>
         <div class="metric-card"><span>Credit card total</span><strong id="analysisCreditPaid">₹0</strong><small class="metric-detail">Your personal share: <strong id="analysisCreditPersonal">₹0</strong></small></div>
       </div>
@@ -35,13 +35,29 @@
       <div class="chart-card"><h3>Due back by person</h3><div id="peopleBalances" class="balance-list"></div></div>
       <div class="chart-card"><h3>Shared groups</h3><div id="groupBalances" class="balance-list"></div></div>
     </section>
-    <section class="page" id="trackPage"><div class="page-title"><span>ALL ACTIVITY</span><h2>Track expenses</h2></div><div class="track-toolbar"><button class="month-button" id="previousMonth" title="Previous month">‹</button><div><span>VIEWING</span><strong id="trackMonth"></strong></div><button class="month-button" id="nextMonth" title="Next month">›</button></div><div class="transaction-list" id="expenseHistory"></div></section>
+    <section class="page" id="trackPage">
+      <div class="page-title"><span>ALL ACTIVITY</span><h2>Track</h2></div>
+      <div class="track-tabs" role="tablist" aria-label="Tracking type">
+        <button class="track-tab active" id="expensesTab" role="tab" aria-selected="true" aria-controls="expensesPanel" data-track-view="expenses">Expenses</button>
+        <button class="track-tab" id="activitiesTab" role="tab" aria-selected="false" aria-controls="activitiesPanel" data-track-view="activities">Activities</button>
+      </div>
+      <div class="track-toolbar"><button class="month-button" id="previousMonth" title="Previous month">‹</button><div><span>VIEWING</span><strong id="trackMonth"></strong></div><button class="month-button" id="nextMonth" title="Next month">›</button></div>
+      <div id="expensesPanel" role="tabpanel" aria-labelledby="expensesTab"><div class="transaction-list" id="expenseHistory"></div></div>
+      <div id="activitiesPanel" role="tabpanel" aria-labelledby="activitiesTab" hidden>
+        <div class="activity-actions"><span id="activityMonthLabel"></span><button class="secondary-button" id="downloadActivityProgress">Download progress PDF</button></div>
+        <form class="activity-create" id="activityForm">
+          <label for="activityName">Add an activity for this month</label>
+          <div><input id="activityName" name="name" maxlength="50" placeholder="e.g. Gym, Reading" required><button class="primary-button" type="submit">Add</button></div>
+        </form>
+        <div class="activity-list" id="activityList"></div>
+      </div>
+    </section>
   </main>
   <nav class="bottom-nav"><button class="nav-item active" data-page="homePage"><span>⌂</span>Home</button><button class="nav-item" data-page="analysisPage"><span>◔</span>Analysis</button><button class="nav-item" data-page="trackPage"><span>≡</span>Track</button></nav>
   <div class="profile-menu" id="profileMenu"><div class="profile-info"><img id="menuAvatar" alt="Profile"><div><strong id="profileName">User</strong><span id="profileEmail"></span></div></div><button id="logoutButton">Sign out</button></div>
   <div class="modal" id="reviewModal"><div class="modal-sheet"><div class="modal-header"><div><span>CHECK BEFORE SAVING</span><h2>Review expenses</h2></div><button class="close-button" id="closeReview">×</button></div><p class="review-description">Correct anything unclear. For shared bills, enter each person and the amount they owe.</p><div id="reviewList"></div><button class="primary-button full-button" id="confirmExpenses">Save expenses</button></div></div>
   <div class="modal" id="editExpenseModal"><div class="modal-sheet"><div class="modal-header"><div><span>UPDATE SAVED EXPENSE</span><h2>Edit expense</h2></div><button class="close-button" id="closeEditExpense">×</button></div><div class="edit-form"><label>Amount<input type="number" id="editAmount" min="0.01" step="0.01"></label><label>Category<select id="editCategory"><option>Food</option><option>Shopping</option><option>Personal Care</option><option>Transport</option><option>Other</option></select></label><label>Subcategory<input id="editSubcategory" maxlength="80"></label><label>Paid using<select id="editPaymentType"><option value="debit">Debit (UPI / debit card)</option><option value="credit">Credit card</option></select></label><label>Date<input type="date" id="editDate"></label><label class="share-toggle"><input type="checkbox" id="editIsShared"> Shared with others</label><div class="shared-edit-fields"><label>Group (optional)<input id="editGroupName" maxlength="80" placeholder="Weekend trip"></label><label>People and amounts<input id="editShares" placeholder="Alex: 20, Sam: 20"></label></div></div><button class="primary-button full-button" id="saveEditedExpense">Update expense</button></div></div>
-  <div class="modal" id="settlementModal"><div class="modal-sheet"><div class="modal-header"><div><span>RECORD MONEY RECEIVED</span><h2 id="settlementTitle">Payment</h2></div><button class="close-button" id="closeSettlement">×</button></div><div class="edit-form"><label>Amount received<input type="number" id="settlementAmount" min="0.01" step="0.01"></label><label>Date received<input type="date" id="settlementDate"></label></div><button class="primary-button full-button" id="saveSettlement">Record payment</button></div></div>
+  <div class="modal" id="settlementModal"><div class="modal-sheet"><div class="modal-header"><div><span>RECORD MONEY RECEIVED</span><h2 id="settlementTitle">Payment</h2><p class="settlement-balance" id="settlementBalance"></p></div><button class="close-button" id="closeSettlement">×</button></div><div class="edit-form"><label>Amount received<input type="number" id="settlementAmount" min="0.01" step="0.01"></label><label>Date received<input type="date" id="settlementDate"></label></div><button class="primary-button full-button" id="saveSettlement">Record payment</button></div></div>
   <div class="modal" id="budgetModal"><div class="modal-sheet"><div class="modal-header"><div><span>MONTHLY LIMIT</span><h2>Set your budget</h2></div><button class="close-button" id="closeBudget">×</button></div><div class="money-input"><span>₹</span><input type="number" id="budgetInput" min="1" placeholder="20000"></div><button class="primary-button full-button" id="saveBudget">Save budget</button></div></div>
   <div class="modal" id="reportModal"><div class="modal-sheet"><div class="modal-header"><div><span>AI FINANCIAL REPORT</span><h2>Choose a period</h2></div><button class="close-button" id="closeReport">×</button></div><div class="report-form"><label>Period<select id="reportPeriod"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="custom">Custom range</option></select></label><label id="reportMonthField">Month<input type="month" id="reportMonth"></label><label id="reportYearField">Year<input type="number" id="reportYear" min="2000" max="2100"></label><div class="report-range" id="reportRangeFields"><label>From<input type="date" id="reportStart"></label><label>To<input type="date" id="reportEnd"></label></div></div><button class="primary-button full-button" id="generateReport">Create PDF report</button></div></div>
   <script type="module" src="./js/app.js"></script>

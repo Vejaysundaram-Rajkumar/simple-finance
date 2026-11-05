@@ -3,8 +3,8 @@ import unittest
 from pydantic import ValidationError
 
 from app.models.schemas import ExpenseCreate, ExpenseUpdate
-from app.routers.analysis import _payment_totals
-from app.services.shared_expenses import build_shared_balances
+from app.routers.analysis import _payment_totals, _report_settlement_details
+from app.services.shared_expenses import _to_cents, build_shared_balances
 
 
 class SharedBalanceTests(unittest.TestCase):
@@ -152,6 +152,123 @@ class SharedBalanceTests(unittest.TestCase):
             [0, 15],
         )
         self.assertEqual(result["groups"][0]["outstanding"], 15)
+
+    def test_settlement_history_keeps_receipt_and_expense_allocations(self):
+        balances = build_shared_balances(
+            [
+                {
+                    "id": "lunch",
+                    "expense_date": "2026-11-02",
+                    "subcategory": "Lunch",
+                    "amount": 100,
+                    "is_shared": True,
+                    "shared_with": [{"name": "Alex", "amount": 30}],
+                },
+                {
+                    "id": "taxi",
+                    "expense_date": "2026-11-04",
+                    "subcategory": "Taxi",
+                    "amount": 60,
+                    "is_shared": True,
+                    "shared_with": [{"name": "Alex", "amount": 20}],
+                },
+            ],
+            [{
+                "id": "receipt-1",
+                "person_key": "alex",
+                "person_name": "Alex",
+                "amount": 35,
+                "settlement_date": "2026-11-05",
+            }],
+        )
+
+        receipt = balances["settlements"][0]
+        self.assertEqual(receipt["id"], "receipt-1")
+        self.assertEqual(receipt["amount"], 35)
+        self.assertEqual(
+            [(allocation["expense_id"], allocation["amount"]) for allocation in receipt["allocations"]],
+            [("lunch", 30), ("taxi", 5)],
+        )
+        self.assertEqual(receipt["unallocated_amount"], 0)
+        self.assertEqual(balances["people"][0]["expenses"][0]["settlement_allocations"][0]["settlement_date"], "2026-11-05")
+
+    def test_report_summarizes_period_shares_and_records_payments_in_period(self):
+        balances = build_shared_balances(
+            [
+                {
+                    "id": "october",
+                    "expense_date": "2026-10-28",
+                    "subcategory": "October meal",
+                    "amount": 100,
+                    "is_shared": True,
+                    "shared_with": [{"name": "Alex", "amount": 25}],
+                },
+                {
+                    "id": "november",
+                    "expense_date": "2026-11-02",
+                    "subcategory": "November meal",
+                    "amount": 80,
+                    "is_shared": True,
+                    "shared_with": [{"name": "Alex", "amount": 20}],
+                },
+            ],
+            [{
+                "person_key": "alex",
+                "person_name": "Alex",
+                "amount": 30,
+                "settlement_date": "2026-11-05",
+            }],
+        )
+        report = _report_settlement_details(balances, "2026-11-01", "2026-11-30")
+
+        self.assertEqual(report["shared_settlement_summary"], {
+            "owed_for_period_expenses": 20,
+            "settled_for_period_expenses": 5,
+            "currently_due_for_period_expenses": 15,
+            "received_during_period": 30,
+        })
+        self.assertEqual(len(report["shared_expenses"]), 1)
+        self.assertEqual(len(report["settlements"]), 1)
+        self.assertEqual(report["settlements"][0]["allocations"][0]["expense_id"], "october")
+
+    def test_fractional_balance_can_be_paid_exactly_in_cents(self):
+        balances = build_shared_balances(
+            [
+                {
+                    "id": "fractional-share",
+                    "expense_date": "2026-11-05",
+                    "amount": 2,
+                    "is_shared": True,
+                    "shared_with": [{"name": "Alex", "amount": 1.5}],
+                }
+            ],
+            [{"person_key": "alex", "amount": 1, "settlement_date": "2026-11-05"}],
+        )
+
+        person = balances["people"][0]
+        self.assertEqual(person["outstanding"], 0.5)
+        self.assertGreater(_to_cents(1), _to_cents(person["outstanding"]))
+
+        settled = build_shared_balances(
+            [
+                {
+                    "id": "fractional-share",
+                    "expense_date": "2026-11-05",
+                    "amount": 2,
+                    "is_shared": True,
+                    "shared_with": [{"name": "Alex", "amount": 1.5}],
+                }
+            ],
+            [
+                {"person_key": "alex", "amount": 1, "settlement_date": "2026-11-05"},
+                {"person_key": "alex", "amount": 0.5, "settlement_date": "2026-11-06"},
+            ],
+        )
+        self.assertEqual(settled["outstanding_total"], 0)
+        self.assertEqual(settled["people"][0]["outstanding"], 0)
+
+    def test_minor_unit_rounding_is_decimal_safe(self):
+        self.assertEqual(_to_cents(0.1) + _to_cents(0.2), 30)
 
     def test_legacy_personal_expenses_do_not_create_balances(self):
         result = build_shared_balances(

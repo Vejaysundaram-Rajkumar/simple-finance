@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from app.auth import get_current_user
 from app.firebase import db
 from app.models.schemas import ExpenseCreate, ExpenseUpdate, MultipleExpenseCreate, SettlementCreate
-from app.services.shared_expenses import _person_key, get_shared_balances
+from app.services.shared_expenses import _person_key, _to_cents, get_shared_balances
 
 router = APIRouter(prefix="/api/expenses", tags=["Expenses"])
 
@@ -78,9 +78,17 @@ async def create_settlement(request: SettlementCreate, user=Depends(get_current_
     )
     if not person:
         raise HTTPException(status_code=404, detail="No shared expenses found for this person")
-    amount = round(request.amount, 2)
-    if amount > person["outstanding"]:
-        raise HTTPException(status_code=422, detail="Payment cannot exceed the outstanding balance")
+    amount_cents = _to_cents(request.amount)
+    if amount_cents <= 0:
+        raise HTTPException(status_code=422, detail="Payment must be at least ₹0.01")
+    outstanding_cents = _to_cents(person["outstanding"])
+    if amount_cents > outstanding_cents:
+        remaining = person["outstanding"]
+        raise HTTPException(
+            status_code=422,
+            detail=f"Payment cannot exceed the remaining balance of ₹{remaining:.2f}",
+        )
+    amount = amount_cents / 100
 
     now = datetime.now(timezone.utc)
     settlement_date = request.settlement_date or now.date().isoformat()

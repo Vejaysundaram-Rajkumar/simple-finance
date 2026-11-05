@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
 from app.config import FRONTEND_URL
-from app.routers import admin, ai, analysis, budget, expenses, users
+from app.routers import activities, admin, ai, analysis, budget, expenses, users
 
 app = FastAPI(title="Simple Finance API", version="1.0.0")
 app.add_middleware(
@@ -27,6 +27,7 @@ async def normalize_vercel_function_path(request, call_next):
 app.include_router(users.router)
 app.include_router(ai.router)
 app.include_router(expenses.router)
+app.include_router(activities.router)
 app.include_router(budget.router)
 app.include_router(analysis.router)
 app.include_router(admin.router)

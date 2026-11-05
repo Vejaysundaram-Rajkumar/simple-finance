@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -114,6 +115,34 @@ class SettlementCreate(BaseModel):
 
 class BudgetRequest(BaseModel):
     amount: float = Field(gt=0)
+
+
+class ActivityCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    month: str = Field(pattern=r"^\d{4}-\d{2}$")
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("An activity name is required")
+        return value
+
+    @field_validator("month")
+    @classmethod
+    def validate_month(cls, value: str) -> str:
+        try:
+            parsed = datetime.strptime(value, "%Y-%m")
+        except ValueError as exc:
+            raise ValueError("Month must use a valid YYYY-MM value") from exc
+        if parsed.strftime("%Y-%m") != value:
+            raise ValueError("Month must use a valid YYYY-MM value")
+        return value
+
+
+class ActivityDayUpdate(BaseModel):
+    completed: bool = Field(strict=True)
 
 
 class ReportRequest(BaseModel):

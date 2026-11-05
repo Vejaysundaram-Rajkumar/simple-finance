@@ -43,3 +43,12 @@ export const generateReport = (data) => request("/api/analysis/report", {
 export const setBudget = (month, amount) => request(`/api/budget/${month}`, {
   method: "PUT", body: JSON.stringify({ amount }),
 });
+export const getActivities = (month) => request(`/api/activities?month=${encodeURIComponent(month)}`);
+export const getActivityProgress = () => request("/api/activities/progress");
+export const createActivity = (name, month) => request("/api/activities", {
+  method: "POST", body: JSON.stringify({ name, month }),
+});
+export const setActivityDay = (activityId, day, completed) => request(`/api/activities/${encodeURIComponent(activityId)}/days/${encodeURIComponent(day)}`, {
+  method: "PUT", body: JSON.stringify({ completed }),
+});
+export const deleteActivity = (activityId) => request(`/api/activities/${encodeURIComponent(activityId)}`, { method: "DELETE" });

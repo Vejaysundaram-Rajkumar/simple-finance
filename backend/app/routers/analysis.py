@@ -33,6 +33,47 @@ def _payment_totals(expenses: list[dict]) -> tuple[dict[str, float], dict[str, f
     )
 
 
+def _report_settlement_details(balances: dict, start_date: str, end_date: str) -> dict:
+    shared_expenses = []
+    for person in balances["people"]:
+        for expense in person["expenses"]:
+            if not start_date <= expense["expense_date"] <= end_date:
+                continue
+            shared_expenses.append({
+                "person_name": person["name"],
+                "expense_date": expense["expense_date"],
+                "description": expense["description"],
+                "group_name": expense["group_name"],
+                "share_amount": expense["share_amount"],
+                "repaid_amount": expense["repaid_amount"],
+                "outstanding": expense["outstanding"],
+                "settlement_allocations": expense["settlement_allocations"],
+            })
+
+    settlements = [
+        settlement
+        for settlement in balances["settlements"]
+        if start_date <= settlement["settlement_date"] <= end_date
+    ]
+    return {
+        "shared_expenses": sorted(
+            shared_expenses,
+            key=lambda row: (
+                row["expense_date"],
+                row["person_name"].casefold(),
+                row["description"].casefold(),
+            ),
+        ),
+        "settlements": settlements,
+        "shared_settlement_summary": {
+            "owed_for_period_expenses": round(sum(row["share_amount"] for row in shared_expenses), 2),
+            "settled_for_period_expenses": round(sum(row["repaid_amount"] for row in shared_expenses), 2),
+            "currently_due_for_period_expenses": round(sum(row["outstanding"] for row in shared_expenses), 2),
+            "received_during_period": round(sum(row["amount"] for row in settlements), 2),
+        },
+    }
+
+
 @router.get("/{month}")
 async def monthly_analysis(month: str, user=Depends(get_current_user)):
     categories = {"Food": 0, "Shopping": 0, "Personal Care": 0, "Transport": 0, "Other": 0}
@@ -132,6 +173,11 @@ async def generate_report(request: ReportRequest, user=Depends(get_current_user)
     payment_types, personal_payment_types = _payment_totals(expenses)
 
     balances = get_shared_balances(user["uid"])
+    settlement_details = _report_settlement_details(
+        balances,
+        request.start_date,
+        request.end_date,
+    )
     summary = {
         "period": request.period,
         "start_date": request.start_date,
@@ -143,6 +189,7 @@ async def generate_report(request: ReportRequest, user=Depends(get_current_user)
         "personal_payment_types": personal_payment_types,
         "personal_spending_total": round(sum(personal_payment_types.values()), 2),
         "outstanding_total": balances["outstanding_total"],
+        **settlement_details,
         "expense_count": len(expenses),
         "categories": categories,
         "monthly": dict(sorted(monthly.items())),
@@ -162,8 +209,12 @@ async def generate_report(request: ReportRequest, user=Depends(get_current_user)
         ],
     }
     try:
-        insight_summary = {key: value for key, value in summary.items() if key != "transactions"}
+        insight_summary = {
+            key: value
+            for key, value in summary.items()
+            if key not in {"transactions", "shared_expenses", "settlements"}
+        }
         insights = await generate_report_insights(insight_summary)
     except Exception as exc:
         raise HTTPException(status_code=502, detail="Gemini could not create report insights") from exc
-    return {**summary, **balances, "insights": insights.model_dump()}
+    return {**summary, **balances, **settlement_details, "insights": insights.model_dump()}
